@@ -13,13 +13,11 @@ class WDirScan(object):
 
     def __init__(self, url, output):
         self.url = url
-        # self.dict_name = dict_name
         self.output = output
 
 
     def scanning(self):
-        # for dir in open(self.dict_name, "r"):
-        #     q.put(dir)
+
         while not q.empty():
 
             dir = q.get()

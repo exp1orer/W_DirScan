@@ -16,32 +16,29 @@ class WDirScan(object):
         self.output = output
 
 
-    def scanning(self):
+    def scanning(self,dir):
 
-        while not q.empty():
+        urls = self.url + dir
+        urls = urls.replace("\n", "")
+        response = requests.get(urls, headers = WDirScan.headers)
+        response.encoding = "utf-8"
+        res_code = response.status_code
+        if res_code == 200:
 
-            dir = q.get()
-            urls = self.url + dir
-            urls = urls.replace("\n", "")
-            response = requests.get(urls, headers = WDirScan.headers)
-            response.encoding = "utf-8"
-            res_code = response.status_code
-            if res_code == 200:
-
-                if not "页面不存在" in response.text:
-                    print("[+]%s%s%d" % (urls, "-" * 50, res_code))
-                    # print("%s%s%s" % (urls, "-" * 50, res_code))
-                    output = open(self.output, "a+")
-                    output.write(urls + "\n")
-                    output.close()
-            else:
-                print("[-]%s%s%d" % (urls, "-" * 50, res_code))
+            if not "页面不存在" in response.text:
+                print("[+]%s%s%d" % (urls, "-" * 50, res_code))
+                # print("%s%s%s" % (urls, "-" * 50, res_code))
+                output = open(self.output, "a+")
+                output.write(urls + "\n")
+                output.close()
+        else:
+            print("[-]%s%s%d" % (urls, "-" * 50, res_code))
 
 
 def main():
     parser = optparse.OptionParser()
     parser.add_option("-u", "--url", dest="urls", help="以http或https开头的url")
-    parser.add_option("-d", "--dict", dest="dict_name", default="dict.txt", help="不指定字典则使用默认字典")
+    parser.add_option("-d", "--dict", dest="dict_name", default="dic.txt", help="不指定字典则使用默认字典")
     parser.add_option("-t", "--thread", dest="thread", default=10, help="不指定线程数则默认使用10线程")
     parser.add_option("-o", "--output", dest="output", default="1.txt", help="导出文件名,如xx.txt,不指定则默认使用1.txt作为文件名")
     (options, args) = parser.parse_args()
@@ -54,8 +51,8 @@ def main():
     print("[*]扫描程序开始，目标Url：%s" % url)
     for dir in open(dict_name, "r"):
         q.put(dir)
-    for i in range(int(thread)):
-        t = threading.Thread(target=w_dirscan.scanning)
+    while q.qsize() > 0:
+        t = threading.Thread(target=w_dirscan.scanning, args=(q.get(),))
         t.start()
         t.join()
     print("扫描结果已保存于：%s" % output)
